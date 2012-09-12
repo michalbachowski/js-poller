@@ -1,7 +1,7 @@
 var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
         "use strict";
         var defaults = {
-                timeout: 1,      // minutes
+                timeout: 1,      // minutes to poll (wait for response)
                 pollInterval: 1, // seconds between consecutive polls
                 data: { 'cursor': null },
                 errorSleepTime: 500
@@ -56,6 +56,7 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
                 sendRequest(url, errorSleepTime[url]);
             },
 
+            // called on succeeded response
             onSuccess = function (response, url) {
                 // fetch last message ID (cursor)
                 options[url].data.cursor = fetchCursor(response);
@@ -63,7 +64,9 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
                 sendRequest(url, options[url].pollInterval);
             };
 
+        // sends request
         doSendRequest = function (url) {
+            // send request
             deferreds[url] = jQuery.ajax({
                 url: url,
                 data: options[url].data,
@@ -72,9 +75,11 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
                 timeout: options[url].timeout * 60 * 1000,
                 global: false
             });
+            // append listeners
             for (i = 0; i < listeners[url].length; i = i + 1) {
                 deferreds[url].success(listeners[url][i]);
             }
+            // append "onError" action
             deferreds[url].error(function (response, url) {
                 onError(response, url);
             });
@@ -82,13 +87,21 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
 
 
         return function (url, success, params) {
+            // for each new URL define standard structure
             if (!listeners.hasOwnProperty(url)) {
+                // merge options
                 options[url] = jQuery.extend(defaults, params);
+                // add listeners (at least one - internal listener that updates cursor)
                 listeners[url] = [function (response) { onSuccess(response, url); }];
+                // set default errorSleepTime
                 errorSleepTime[url] = options[url].errorSleepTime;
+                // force request send right now (not after timeout)
+                // it sets deferreds[url]
                 doSendRequest(url);
             }
+            // append callback to listeners
             listeners[url].push(success);
+            // append callback to current deferred instance
             deferreds[url].success(success);
         };
     },
