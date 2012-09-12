@@ -1,4 +1,4 @@
-var pollerFactory = function (window, jQuery) {
+var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
         "use strict";
         var defaults = {
                 timeout: 1,      // minutes
@@ -11,24 +11,20 @@ var pollerFactory = function (window, jQuery) {
             deferreds = {},
             i = 0,
 
-            onError = function (response, url) {
-                // when response does not contain "status" field it means that "timeout" occured,
-                // so wo don`t increase error sleep time
-                var status = 0;
+            // checks status for response
+            checkStatus = statusChecker || function (response) {
                 try {
-                    status = parseInt(response.status, 10);
+                    return parseInt(response.status, 10);
                 } catch (e) {
                 }
-                if (status !== 1) {
-                    errorSleepTime[url] *= 2;
+                return 0;
+            },
 
+            // fetches last message ID (cursor)
+            fetchCursor = cursorFetcher || function (response) {
+                if (typeof response !== "undefined" && 1 === parseInt(response.status, 10)) {
+                    return response.messages[response.messages.length - 1].id;
                 }
-                window.setTimeout(
-                    function () {
-                        sendRequest(url);
-                    },
-                    errorSleepTime[url]
-                );
             },
 
             sendRequest = function (url) {
@@ -50,11 +46,20 @@ var pollerFactory = function (window, jQuery) {
                 });
             },
 
+            // called on erroneous response
+            onError = function (response, url) {
+                // when response does not contain "status" field it means that "timeout" occured,
+                // so wo don`t increase error sleep time
+                if (checkStatus(response) !== 1) {
+                    errorSleepTime[url] *= 2;
+
+                }
+                sendRequest(url, errorSleepTime[url]);
+            },
+
             onSuccess = function (response, url) {
                 // fetch last message ID (cursor)
-                if (typeof response !== "undefined" && 1 === parseInt(response.status, 10)) {
-                    options[url].data.cursor = response.messages[response.messages.length - 1].id;
-                }
+                options[url].data.cursor = fetchCursor(response);
                 errorSleepTime[url] = options[url].errorSleepTime;
                 sendRequest(url);
             };
