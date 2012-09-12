@@ -2,6 +2,7 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
         "use strict";
         var defaults = {
                 timeout: 1,      // minutes
+                pollInterval: 1, // seconds between consecutive polls
                 data: { 'cursor': null },
                 errorSleepTime: 500
             },
@@ -27,23 +28,21 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
                 }
             },
 
-            sendRequest = function (url) {
-                // send request
-                deferreds[url] = jQuery.ajax({
-                    url: url,
-                    data: options[url].data,
-                    dataType: "jsonp",
-                    type: "POST",
-                    timeout: options[url].timeout * 60 * 1000,
-                    global: false
-                });
-                // append listeners
-                for (i = 0; i < listeners[url].length; i = i + 1) {
-                    deferreds[url].success(listeners[url][i]);
+            // placeholder/declaration (implementation/definition put below - JSLint compliance)
+            doSendRequest = null,
+            
+            // sends request according to given timeout
+            sendRequest = function (url, timeout) {
+                if (typeof timeout !== 'undefined' && timeout > 0) {
+                    window.setTimeout(
+                        function () {
+                            doSendRequest(url);
+                        },
+                        timeout
+                    );
+                    return;
                 }
-                deferreds[url].error(function (response, url) {
-                    onError(response, url);
-                });
+                sendRequest(url);
             },
 
             // called on erroneous response
@@ -61,19 +60,36 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
                 // fetch last message ID (cursor)
                 options[url].data.cursor = fetchCursor(response);
                 errorSleepTime[url] = options[url].errorSleepTime;
-                sendRequest(url);
+                sendRequest(url, options[url].pollInterval);
             };
+
+        doSendRequest = function (url) {
+            deferreds[url] = jQuery.ajax({
+                url: url,
+                data: options[url].data,
+                dataType: "jsonp",
+                type: "POST",
+                timeout: options[url].timeout * 60 * 1000,
+                global: false
+            });
+            for (i = 0; i < listeners[url].length; i = i + 1) {
+                deferreds[url].success(listeners[url][i]);
+            }
+            deferreds[url].error(function (response, url) {
+                onError(response, url);
+            });
+        };
+
 
         return function (url, success, params) {
             if (!listeners.hasOwnProperty(url)) {
                 options[url] = jQuery.extend(defaults, params);
                 listeners[url] = [function (response) { onSuccess(response, url); }];
                 errorSleepTime[url] = options[url].errorSleepTime;
-                deferreds[url] = null;
-                sendRequest(url);
-                deferreds[url].success(success);
+                doSendRequest(url);
             }
             listeners[url].push(success);
+            deferreds[url].success(success);
         };
     },
     poller = null;
