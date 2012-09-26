@@ -1,10 +1,15 @@
 var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
         "use strict";
         var defaults = {
-                timeout: 1,      // minutes to poll (wait for response)
-                pollInterval: 1, // seconds between consecutive polls
+            // jQuery.ajax options
+                dataType: "json",
+                type: "POST",
+                global: false,
+                timeout: 1,
                 data: { 'cursor': null },
-                errorSleepTime: 500
+            // poller options
+                errorSleepTime: 500,
+                pollInterval: 1 // seconds between consecutive polls
             },
             options = {},
             errorSleepTime = {},
@@ -51,7 +56,6 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
                 // so wo don`t increase error sleep time
                 if (checkStatus(response) !== 1) {
                     errorSleepTime[url] *= 2;
-
                 }
                 sendRequest(url, errorSleepTime[url]);
             },
@@ -67,14 +71,7 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
         // sends request
         doSendRequest = function (url) {
             // send request
-            deferreds[url] = jQuery.ajax({
-                url: url,
-                data: options[url].data,
-                dataType: "jsonp",
-                type: "POST",
-                timeout: options[url].timeout * 60 * 1000,
-                global: false
-            });
+            deferreds[url] = jQuery.ajax(options[url]);
             // append listeners
             for (i = 0; i < listeners[url].length; i = i + 1) {
                 deferreds[url].success(listeners[url][i]);
@@ -85,12 +82,11 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
             });
         };
 
-
         return function (url, success, params) {
             // for each new URL define standard structure
             if (!listeners.hasOwnProperty(url)) {
                 // merge options
-                options[url] = jQuery.extend(defaults, params);
+                options[url] = jQuery.extend(defaults, {url: url}, params);
                 // add listeners (at least one - internal listener that updates cursor)
                 listeners[url] = [function (response) { onSuccess(response, url); }];
                 // set default errorSleepTime
