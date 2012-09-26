@@ -42,7 +42,7 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
                     );
                     return;
                 }
-                sendRequest(url);
+                doSendRequest(url);
             },
 
             // called on erroneous response
@@ -80,7 +80,7 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
                 deferreds[url].success(listeners[url][i]);
             }
             // append "onError" action
-            deferreds[url].error(function (response, url) {
+            deferreds[url].error(function (response) {
                 onError(response, url);
             });
         };
