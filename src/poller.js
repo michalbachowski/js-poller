@@ -5,11 +5,11 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
                 dataType: "json",
                 type: "POST",
                 global: false,
-                timeout: 1,
+                timeout: 5 * 60 * 1000,
                 data: { 'cursor': null },
             // poller options
                 errorSleepTime: 500,
-                pollInterval: 1 // seconds between consecutive polls
+                pollInterval: 1 // miliseconds between consecutive polls
             },
             options = {},
             errorSleepTime = {},
