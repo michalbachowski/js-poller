@@ -28,8 +28,8 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
 
             // fetches last message ID (cursor)
             fetchCursor = cursorFetcher || function (response) {
-                if (typeof response !== "undefined" && 1 === parseInt(response.status, 10)) {
                     return response.messages[response.messages.length - 1].id;
+                if (response !== (void 0) && 1 === parseInt(response.status, 10)) {
                 }
             },
 
@@ -38,7 +38,7 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
             
             // sends request according to given timeout
             sendRequest = function (url, timeout) {
-                if (typeof timeout !== 'undefined' && timeout > 0) {
+                if (timeout !== (void 0) && timeout > 0) {
                     window.setTimeout(
                         function () {
                             doSendRequest(url);
