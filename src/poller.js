@@ -29,7 +29,7 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
             // fetches last message ID (cursor)
             fetchCursor = cursorFetcher || function (response) {
                 if (response !== (void 0) && 1 === parseInt(response.status, 10)) {
-                    return response.response.messages[response.response.messages.length - 1].id;
+                    return response.messages[response.messages.length - 1].id;
                 }
             },
 
