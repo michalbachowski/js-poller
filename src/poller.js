@@ -87,9 +87,9 @@ var pollerFactory = function (window, jQuery, dataFetcher) {
         return function (url, success, params) {
             // for each new URL define standard structure
             if (!listeners.hasOwnProperty(url)) {
-                // merge options
-                options[url] = jQuery.extend(true, {}, defaults, params, {url: url});
-                // add listeners (at least one - internal listener that updates cursor)
+                // set default options
+                options[url] = jQuery.extend(true, {}, defaults);
+                // add listeners (at least one - internal listener that updates data)
                 listeners[url] = [function (response) { onSuccess(response, url); }];
                 // set default errorSleepTime
                 errorSleepTime[url] = options[url].errorSleepTime;
@@ -97,6 +97,8 @@ var pollerFactory = function (window, jQuery, dataFetcher) {
                 // it sets deferreds[url]
                 doSendRequest(url);
             }
+            // merge options
+            options[url] = jQuery.extend(true, options[url], params, {url: url});
             // append callback to listeners
             listeners[url].push(success);
             // append callback to current deferred instance
