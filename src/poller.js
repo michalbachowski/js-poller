@@ -1,4 +1,4 @@
-var pollerFactory = function (window, jQuery, cursorFetcher) {
+var pollerFactory = function (window, jQuery, dataFetcher) {
         "use strict";
         var defaults = {
             // jQuery.ajax options
@@ -6,7 +6,7 @@ var pollerFactory = function (window, jQuery, cursorFetcher) {
                 type: "POST",
                 global: false,
                 timeout: 5 * 60 * 1000,
-                data: { 'cursor': null },
+                data: {},
             // poller options
                 errorSleepTime: 500,
                 pollInterval: 1 // miliseconds between consecutive polls
@@ -17,10 +17,10 @@ var pollerFactory = function (window, jQuery, cursorFetcher) {
             deferreds = {},
             i = 0,
 
-            // fetches last message ID (cursor)
-            fetchCursor = cursorFetcher || function (response) {
+            // fetches data to be send with next request
+            fetchData = dataFetcher || function (response) {
                 if (response !== (void 0) && 1 === parseInt(response.status, 10)) {
-                    return response.messages[response.messages.length - 1].id;
+                    return {cursor: response.messages[response.messages.length - 1].id};
                 }
             },
 
@@ -60,8 +60,8 @@ var pollerFactory = function (window, jQuery, cursorFetcher) {
                 if (!listeners.hasOwnProperty(url)) {
                     return;
                 }
-                // fetch last message ID (cursor)
-                options[url].data.cursor = fetchCursor(response);
+                // fetch some data to pass back in request
+                options[url].data = fetchData(response);
                 errorSleepTime[url] = options[url].errorSleepTime;
                 sendRequest(url, options[url].pollInterval);
             };
