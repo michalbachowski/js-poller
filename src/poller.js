@@ -1,4 +1,4 @@
-var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
+var pollerFactory = function (window, jQuery, cursorFetcher) {
         "use strict";
         var defaults = {
             // jQuery.ajax options
@@ -16,15 +16,6 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
             listeners = {},
             deferreds = {},
             i = 0,
-
-            // checks status for response
-            checkStatus = statusChecker || function (response) {
-                try {
-                    return parseInt(response.status, 10);
-                } catch (e) {
-                }
-                return 0;
-            },
 
             // fetches last message ID (cursor)
             fetchCursor = cursorFetcher || function (response) {
@@ -56,9 +47,8 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
                 if (!listeners.hasOwnProperty(url)) {
                     return;
                 }
-                // when response does not contain "status" field it means that "timeout" occured,
-                // so wo don`t increase error sleep time
-                if (checkStatus(response) !== 1) {
+                // do not increase error sleep time in case of "timeout" occured
+                if (response.statusText !== 'timeout') {
                     errorSleepTime[url] *= 2;
                 }
                 sendRequest(url, errorSleepTime[url]);
