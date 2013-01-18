@@ -113,7 +113,7 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
             deferreds[url].success(success);
             // return function that allows to remove poller
             return function () {
-                // listeners hav removed already
+                // listeners have been removed already
                 if (!listeners.hasOwnProperty(url)) {
                     return;
                 }
