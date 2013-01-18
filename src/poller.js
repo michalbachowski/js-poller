@@ -86,7 +86,7 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
             // for each new URL define standard structure
             if (!listeners.hasOwnProperty(url)) {
                 // merge options
-                options[url] = jQuery.extend(defaults, {url: url}, params);
+                options[url] = jQuery.extend(true, {}, defaults, params, {url: url});
                 // add listeners (at least one - internal listener that updates cursor)
                 listeners[url] = [function (response) { onSuccess(response, url); }];
                 // set default errorSleepTime
