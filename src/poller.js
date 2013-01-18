@@ -52,6 +52,10 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
 
             // called on erroneous response
             onError = function (response, url) {
+                // poller was removed
+                if (!listeners.hasOwnProperty(url)) {
+                    return;
+                }
                 // when response does not contain "status" field it means that "timeout" occured,
                 // so wo don`t increase error sleep time
                 if (checkStatus(response) !== 1) {
@@ -62,6 +66,10 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
 
             // called on succeeded response
             onSuccess = function (response, url) {
+                // poller was removed
+                if (!listeners.hasOwnProperty(url)) {
+                    return;
+                }
                 // fetch last message ID (cursor)
                 options[url].data.cursor = fetchCursor(response);
                 errorSleepTime[url] = options[url].errorSleepTime;
@@ -70,6 +78,10 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
 
         // sends request
         doSendRequest = function (url) {
+            // poller was removed
+            if (!listeners.hasOwnProperty(url)) {
+                return;
+            }
             // send request
             deferreds[url] = jQuery.ajax(options[url]);
             // append listeners
@@ -99,9 +111,43 @@ var pollerFactory = function (window, jQuery, statusChecker, cursorFetcher) {
             listeners[url].push(success);
             // append callback to current deferred instance
             deferreds[url].success(success);
+            // return function that allows to remove poller
+            return function () {
+                // listeners hav removed already
+                if (!listeners.hasOwnProperty(url)) {
+                    return;
+                }
+                // remove listeners
+                for (i = 0; i < listeners[url].length; i = i + 1) {
+                    if (listeners[url][i] === success) {
+                        listeners[url].remove(i);
+                    }
+                }
+                // have more than 1 listeners (there is always one left - default 'onSuccess') - skip
+                if (listeners[url].length > 1) {
+                    return;
+                }
+                // no listeners - remove everything
+                deferreds[url].abort();
+                delete listeners[url];
+                delete options[url];
+                delete errorSleepTime[url];
+                delete deferreds[url];
+            };
+
         };
     },
     poller = null;
+
+if (!Array.prototype.hasOwnProperty('remove')) {
+    // Array Remove - By John Resig (MIT Licensed)
+    Array.prototype.remove = function (from, to) {
+        "use strict";
+        var rest = this.slice(parseInt(to || from, 10) + 1 || this.length);
+        this.length = from < 0 ? this.length + from : from;
+        return this.push.apply(this, rest);
+    };
+}
 
 try {
     poller = pollerFactory(window, jQuery);
