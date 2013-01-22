@@ -55,8 +55,7 @@ var pollerFactory = function (window, jQuery) {
                 }
                 errorSleepTime[url] = options[url].errorSleepTime;
                 // set data to be passed back in next request
-                jQuery.extend(true, options[url].data,
-                    sendRequest(url, options[url].pollInterval) || {});
+                sendRequest(url, options[url].pollInterval);
             };
 
         // sends request
@@ -66,7 +65,8 @@ var pollerFactory = function (window, jQuery) {
                 return;
             }
             // send request
-            deferreds[url] = jQuery.ajax(options[url]);
+            console.log(jQuery.extend(true, options[url], {url: url}));
+            deferreds[url] = jQuery.ajax(jQuery.extend(true, options[url], {url: url}));
             // append listeners
             for (i = 0; i < listeners[url].length; i = i + 1) {
                 deferreds[url].success(listeners[url][i]);
@@ -81,7 +81,7 @@ var pollerFactory = function (window, jQuery) {
             // for each new URL define standard structure
             if (!listeners.hasOwnProperty(url)) {
                 // set default options
-                options[url] = jQuery.extend(true, {}, defaults);
+                options[url] = jQuery.extend(true, {}, defaults, params);
                 // add listeners (at least one - internal listener that updates data)
                 listeners[url] = [function (response) { onSuccess(response, url); }];
                 // set default errorSleepTime
@@ -89,10 +89,12 @@ var pollerFactory = function (window, jQuery) {
                 // force request send right now (not after timeout)
                 // it sets deferreds[url]
                 doSendRequest(url);
+            } else {
+                // merge options
+                options[url] = jQuery.extend(true, options[url], params);
             }
-            // merge options
-            options[url] = jQuery.extend(true, options[url], params, {url: url});
             // append callback to listeners
+            var tmp = function (r) { options[url] = jQuery.extend(true, options[url], success(r) || {}); };
             listeners[url].push(success);
             // append callback to current deferred instance
             deferreds[url].success(success);
@@ -104,7 +106,7 @@ var pollerFactory = function (window, jQuery) {
                 }
                 // remove listeners
                 for (i = 0; i < listeners[url].length; i = i + 1) {
-                    if (listeners[url][i] === success) {
+                    if (listeners[url][i] === tmp) {
                         listeners[url].remove(i);
                     }
                 }
