@@ -65,7 +65,6 @@ var pollerFactory = function (window, jQuery) {
                 return;
             }
             // send request
-            console.log(jQuery.extend(true, options[url], {url: url}));
             deferreds[url] = jQuery.ajax(jQuery.extend(true, options[url], {url: url}));
             // append listeners
             for (i = 0; i < listeners[url].length; i = i + 1) {
