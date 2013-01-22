@@ -1,4 +1,4 @@
-var pollerFactory = function (window, jQuery, dataFetcher) {
+var pollerFactory = function (window, jQuery) {
         "use strict";
         var defaults = {
             // jQuery.ajax options
@@ -16,13 +16,6 @@ var pollerFactory = function (window, jQuery, dataFetcher) {
             listeners = {},
             deferreds = {},
             i = 0,
-
-            // fetches data to be send with next request
-            fetchData = dataFetcher || function (response) {
-                if (response !== (void 0) && 1 === parseInt(response.status, 10)) {
-                    return {cursor: response.messages[response.messages.length - 1].id};
-                }
-            },
 
             // placeholder/declaration (implementation/definition put below - JSLint compliance)
             doSendRequest = null,
@@ -60,10 +53,10 @@ var pollerFactory = function (window, jQuery, dataFetcher) {
                 if (!listeners.hasOwnProperty(url)) {
                     return;
                 }
-                // fetch some data to pass back in request
-                options[url].data = fetchData(response);
                 errorSleepTime[url] = options[url].errorSleepTime;
-                sendRequest(url, options[url].pollInterval);
+                // set data to be passed back in next request
+                jQuery.extend(true, options[url].data,
+                    sendRequest(url, options[url].pollInterval) || {});
             };
 
         // sends request
