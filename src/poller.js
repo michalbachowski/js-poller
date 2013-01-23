@@ -107,6 +107,10 @@ var pollerFactory = function (window, jQuery) {
                 for (i = 0; i < listeners[url].length; i = i + 1) {
                     if (listeners[url][i] === tmp) {
                         listeners[url].remove(i);
+                        // force deferred to abort in order to refresh listeners
+                        deferreds[url].abort();
+                        // remove only one listener of that type
+                        break;
                     }
                 }
                 // have more than 1 listeners (there is always one left - default 'onSuccess') - skip
@@ -114,7 +118,6 @@ var pollerFactory = function (window, jQuery) {
                     return;
                 }
                 // no listeners - remove everything
-                deferreds[url].abort();
                 delete listeners[url];
                 delete options[url];
                 delete errorSleepTime[url];
