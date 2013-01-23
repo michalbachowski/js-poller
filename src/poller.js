@@ -93,10 +93,10 @@ var pollerFactory = function (window, jQuery) {
                 options[url] = jQuery.extend(true, options[url], params);
             }
             // append callback to listeners
-            var tmp = function (r) { options[url] = jQuery.extend(true, options[url], success(r) || {}); };
-            listeners[url].push(success);
+            var tmp = function (r) { jQuery.extend(true, options[url].data, success(r)); };
+            listeners[url].push(tmp);
             // append callback to current deferred instance
-            deferreds[url].success(success);
+            deferreds[url].success(tmp);
             // return function that allows to remove poller
             return function () {
                 // listeners have been removed already
